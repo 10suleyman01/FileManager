@@ -2,21 +2,12 @@ package main
 
 import (
 	"bufio"
+	"fmanager/manager"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
 )
-
-/////////////////////////////////////
-//  !    файловый менеджер !       //
-// 1.      Создать файл            //
-// 2.      Удалить файл            //
-// 3.      Копировать файл         //
-// 4. Редактировать название файла //
-// 5.       Создать папку          //
-// 6.       Перемещение            //
-/////////////////////////////////////
 
 const (
 	CREATE = 1
@@ -30,44 +21,58 @@ const (
 
 var options = map[int]string{
 	CREATE: "Создать файл",
-	DELETE: "Удалить файл",
+	DELETE: "Удалить",
 	COPY:   "Копировать файл",
 	RENAME: "Редактировать файл",
-	MKDIR:  "Создать папку", // TODO
-	MOVE:   "Перемещение",   // TODO
+	MKDIR:  "Создать папку",
+	MOVE:   "Перемещение", // TODO
 	EXIT:   "Выход",
 }
 
 func main() {
 
-	fm := FileManager{}
+	fm := manager.FileManager{}
 	reader := bufio.NewReader(os.Stdin)
 
-	for {
-		printListOptions()
+	printListOptions()
 
+	for {
 		input, _ := reader.ReadString('\n')
 		res, _ := strconv.Atoi(strings.TrimSpace(input))
 
-		fmt.Println("Введите имя файла: ")
+		if res == MKDIR {
+			fmt.Println("Введите имя папки: ")
+		} else if res == MOVE {
+			fmt.Println("Введите путь к файлу: ")
+		} else if res == DELETE {
+			fmt.Println("Введите путь файла или папки")
+		} else {
+			fmt.Println("Введите имя файла: ")
+		}
+
 		inputFile, _ := reader.ReadString('\n')
-		fileName := strings.TrimSpace(inputFile)
+		name := strings.TrimSpace(inputFile)
 
 		switch res {
 		case CREATE:
-			fm.CreateFile(fileName)
+			fm.CreateFile(name)
 			break
 		case DELETE:
-			fm.DeleteFile(fileName)
+			fm.DeleteFile(name)
 			break
 		case COPY:
-			fm.CopyFile(fileName)
+			fm.CopyFile(name)
 			break
 		case RENAME:
 			fmt.Println("Введите новое имя файла: ")
 			inputFile, _ := reader.ReadString('\n')
 			newFileName := strings.TrimSpace(inputFile)
-			fm.RenameFile(fileName, newFileName)
+			fm.RenameFile(name, newFileName)
+			break
+		case MKDIR:
+			fm.CreateFolder(name)
+			break
+		case MOVE:
 			break
 		case EXIT:
 			os.Exit(1)

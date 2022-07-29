@@ -1,19 +1,17 @@
-package main
+package manager
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
-	os "os"
+	"os"
 )
 
-const READ int = os.O_RDONLY
-const WRITE int = os.O_WRONLY
+const READ = os.O_RDONLY
+const WRITE = os.O_WRONLY
 
 type FileManager struct{}
 
-func (f *FileManager) CreateFile(name string) *os.File {
-	defer fmt.Println("File has been created")
+func (f FileManager) CreateFile(name string) *os.File {
 	file, err := os.Create(name)
 	if err != nil {
 		log.Fatal(err)
@@ -25,23 +23,31 @@ func (f *FileManager) CreateFile(name string) *os.File {
 	return file
 }
 
-func (f *FileManager) DeleteFile(name string) {
-	defer fmt.Println("File deleted")
-	if len(name) <= 0 {
-		return
-	}
-	err := os.Remove(name)
-	if err != nil {
+func (f FileManager) CreateFolder(name string) {
+	if err := os.Mkdir(name, os.ModeDir); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func (f *FileManager) RenameFile(name string, newName string) {
+func (f FileManager) DeleteFile(name string) {
+	if len(name) <= 0 {
+		log.Fatal("filename len must be greater than 0")
+		return
+	}
+	err := os.Remove(name)
+	if err != nil {
+		return
+	}
+}
+
+func (f FileManager) RenameFile(name, newName string) {
 	if len(name) <= 0 && len(newName) <= 0 && name != newName {
 		return
 	}
-	defer fmt.Println("File renamed")
-	file := f.OpenFile(name, READ)
+	file, isExists := f.OpenFile(name, READ)
+	if !isExists {
+		return
+	}
 	data := f.ReadDataFromFile(file.Name())
 	err := file.Close()
 	if err != nil {
@@ -53,26 +59,28 @@ func (f *FileManager) RenameFile(name string, newName string) {
 	f.WriteDataToFile(newName, data)
 }
 
-func (f *FileManager) OpenFile(name string, flag int) *os.File {
+func (f FileManager) OpenFile(name string, flag int) (file *os.File, isCreated bool) {
 	if len(name) <= 0 {
-		return nil
+		log.Fatal("filename len must be greater than 0")
+		return nil, false
 	}
 	file, err := os.OpenFile(name, flag, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return file
+	return file, true
 }
 
-func (f *FileManager) CopyFile(name string) {
+func (f FileManager) CopyFile(name string) {
 	if len(name) <= 0 {
+		log.Fatal("filename len must be greater than 0")
 		return
 	}
 	data := f.ReadDataFromFile(name)
 	f.WriteDataToFile("c_"+name, data)
 }
 
-func (f *FileManager) WriteDataToFile(name string, data []byte) {
+func (f FileManager) WriteDataToFile(name string, data []byte) {
 	errWrite := ioutil.WriteFile(name, data, 0666)
 	if errWrite != nil {
 		log.Fatal(errWrite)
@@ -80,7 +88,7 @@ func (f *FileManager) WriteDataToFile(name string, data []byte) {
 	}
 }
 
-func (f *FileManager) ReadDataFromFile(name string) []byte {
+func (f FileManager) ReadDataFromFile(name string) []byte {
 	data, errRead := ioutil.ReadFile(name)
 	if errRead != nil {
 		log.Fatal(errRead)
